@@ -1,0 +1,13 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = linux
+Target = linux-headers
+Target = nvidia-580xx-dkms
+Target = nvidia-580xx-utils
+
+[Action]
+Description = GPU hold reminder - use gpu-update-nvidia.sh for held packages
+When = PreTransaction
+Exec = /bin/sh -c 'echo ">>> GPU HOLD: linux/linux-headers/nvidia-580xx are on hold (kernel 7.2 strncpy issue). Normal -Syu skips them. When ready run: bash ~/gpu-update-nvidia.sh <<<"'

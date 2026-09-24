@@ -1,0 +1,5 @@
+# Local / private - never published
+.env
+*.log
+logs/
+.local/
