@@ -6,10 +6,13 @@
 # calling gpu_diagnose - no test hooks in this file by design.
 # Verdicts: MATCH (this repo's fix applies), HEALTHY, UNCLEAR, plus
 # built-but-unbound and no-DKMS-entry states with pointers.
+# NOTE: keep the awk below in sync with the binding check in gpu-verify.sh.
+# GPUs are matched as VGA *or* 3D controller (laptop dGPUs often show as 3D),
+# then narrowed to NVIDIA devices so a hybrid Intel iGPU cannot skew the verdict.
 gpu_diagnose() {
   local _diagd _diagb
   _diagd="$(dkms status 2>/dev/null | grep -i nvidia || true)"
-  _diagb="$(lspci -k 2>/dev/null | grep -A3 -i vga | grep 'Kernel driver in use' || true)"
+  _diagb="$(lspci -k 2>/dev/null | awk '/^[0-9a-f:.]+ (VGA compatible controller|3D controller)/{nvidia=tolower($0)~/nvidia/} nvidia&&/Kernel driver in use/{print; nvidia=0}' || true)"
   echo "DKMS found: ${_diagd:-'(no nvidia DKMS entry)'}"
   echo "Driver bound: ${_diagb:-'(none bound)'}"
   if echo "$_diagd" | grep -q ': added'; then

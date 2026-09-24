@@ -16,7 +16,7 @@ echo "=== UNAME / OS ==="
 uname -a; cat /etc/os-release
 echo
 echo "=== GPU / DRIVER BINDING ==="
-lspci -k | grep -A3 -i vga
+lspci -k | grep -A3 -iE 'VGA compatible controller|3D controller'
 echo
 echo "=== LSMOD nvidia/nouveau ==="
 lsmod | grep -E 'nvidia|nouveau' || echo "neither loaded"
@@ -61,7 +61,7 @@ if [ -f "$_DIAGLIB" ]; then
 else
   echo "diagnose library missing ($_DIAGLIB); raw state only:"
   dkms status 2>&1 | grep -i nvidia || echo "(no nvidia DKMS entry)"
-  lspci -k 2>/dev/null | grep -A3 -i vga | grep 'Kernel driver in use' || echo "(none bound)"
+  lspci -k 2>/dev/null | grep -A3 -iE 'VGA compatible controller|3D controller' | grep 'Kernel driver in use' || echo "(none bound)"
 fi
 echo
 echo "Saved to $OUT"

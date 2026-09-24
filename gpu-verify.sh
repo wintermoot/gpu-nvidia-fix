@@ -40,7 +40,8 @@ else
   echo "=== POST-REBOOT checks ==="
   check "dkms status | grep -qiE 'nvidia.*: installed'" \
     "DKMS nvidia module is built"
-  check "lspci -k | grep -A3 -i vga | grep -q 'Kernel driver in use: nvidia'" \
+  # keep in sync with lib/diagnose.sh: VGA *or* 3D controller, NVIDIA devices only
+  check "lspci -k | awk '/^[0-9a-f:.]+ (VGA compatible controller|3D controller)/{nvidia=tolower(\$0)~/nvidia/} nvidia&&/Kernel driver in use/{print; nvidia=0}' | grep -q 'nvidia'" \
     "nvidia driver is bound to the card"
   check "! lsmod | grep -q '^nouveau'" \
     "nouveau is not loaded"
