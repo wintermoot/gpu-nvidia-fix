@@ -53,30 +53,15 @@ echo "=== DMESG (needs sudo, will prompt) ==="
 sudo dmesg 2>&1 | grep -iE 'nvidia|nouveau|drm|failed|firmware' | tail -n 120
 echo
 echo "=== DIAGNOSIS (do I need gpu-fix-nvidia.sh?) ==="
-_DIAG_DKMS="$(dkms status 2>/dev/null | grep -i nvidia || true)"
-_DIAG_BIND="$(lspci -k 2>/dev/null | grep -A3 -i vga | grep 'Kernel driver in use' || true)"
-echo "DKMS found: ${_DIAG_DKMS:-'(no nvidia DKMS entry)'}"
-echo "Driver bound: ${_DIAG_BIND:-'(none bound)'}"
-if echo "$_DIAG_DKMS" | grep -q ': added'; then
-  if [ -z "$_DIAG_BIND" ] || echo "$_DIAG_BIND" | grep -qi nouveau; then
-    echo "VERDICT: MATCH - driver is registered but NOT built for this kernel."
-    echo "Next step: bash gpu-fix-nvidia.sh (same folder as this script)."
-  else
-    echo "VERDICT: UNCLEAR - driver unbuilt but something else is bound."
-    echo "Share the full log above when asking for help."
-  fi
-elif echo "$_DIAG_DKMS" | grep -q ': installed'; then
-  if echo "$_DIAG_BIND" | grep -q 'nvidia'; then
-    echo "VERDICT: HEALTHY - driver is built and bound. Your problem is"
-    echo "likely elsewhere (compositor, Xorg config, cables). The fix script"
-    echo "probably does not apply to you."
-  else
-    echo "VERDICT: driver is built but NOT bound - check the blacklist,"
-    echo "modprobe, and cmdline sections above."
-  fi
+_DIAGLIB="$(dirname "$_SRC")/lib/diagnose.sh"
+if [ -f "$_DIAGLIB" ]; then
+  # shellcheck source=lib/diagnose.sh
+  . "$_DIAGLIB"
+  gpu_diagnose
 else
-  echo "VERDICT: no nvidia DKMS entry found - this repo's fix probably"
-  echo "does not apply to you."
+  echo "diagnose library missing ($_DIAGLIB); raw state only:"
+  dkms status 2>&1 | grep -i nvidia || echo "(no nvidia DKMS entry)"
+  lspci -k 2>/dev/null | grep -A3 -i vga | grep 'Kernel driver in use' || echo "(none bound)"
 fi
 echo
 echo "Saved to $OUT"

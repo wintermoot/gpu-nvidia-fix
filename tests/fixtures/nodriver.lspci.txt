@@ -1,0 +1,3 @@
+00:02.0 VGA compatible controller: Intel Corporation UHD Graphics 630
+	Kernel driver in use: i915
+	Kernel modules: i915

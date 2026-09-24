@@ -209,6 +209,10 @@ run it from a GUI terminal instead; that SKIP is expected, not a problem.)
 - `gpu-verify.sh pre|post` — pre/post reboot checklists with PASS/FAIL per
   item (DKMS, blacklist, mkinitcpio, GRUB, binding, nvidia-smi,
   resolution). Exit code 0 means proceed.
+- `lib/diagnose.sh` — the driver-state classifier (`MATCH` / `HEALTHY` /
+  `UNCLEAR` / built-unbound / no-entry) shared by `gpu-debug.sh`.
+- `tests/` — fixtures (`dkms status` + `lspci -k` samples) and `run.sh`,
+  which runs the classifier against them with no hardware. Also runs in CI.
 - `gpu-hold-reminder.hook` — pacman `PreTransaction` hook that warns when
   a transaction touches held packages (install to
   `/etc/pacman.d/hooks/`).
