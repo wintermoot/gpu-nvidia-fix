@@ -52,7 +52,31 @@ The kitty terminals and other apps launched wouldn't properly refresh.. so I was
 essentially blind.
 
 
-## Emergency: fixing it from a text console
+## What the repair changes (read this first)
+
+The repair does **two separate jobs**. They are related but not the same:
+
+**Phase 1 — source compatibility.** Applies `patches/0001-0004` to the
+DKMS sources so the driver compiles on kernel 7.2 at all. Without this,
+nothing below matters. Details in `PATCH_NOTES.md`.
+
+**Phase 2 — boot/module configuration.** Makes the built driver actually
+load at boot:
+
+- writes `/etc/modprobe.d/blacklist-nouveau.conf` (keeps nouveau from
+  grabbing the card first)
+- ensures `nvidia nvidia_modeset nvidia_uvm nvidia_drm` are in the
+  `MODULES=` line of `/etc/mkinitcpio.conf` (early KMS) — existing
+  entries are preserved, never replaced
+- ensures `nvidia_drm.modeset=1 nvidia_drm.fbdev=1` are in
+  `GRUB_CMDLINE_LINUX_DEFAULT` in `/etc/default/grub`
+- rebuilds the initramfs (`mkinitcpio -P`) and GRUB config
+  (`grub-mkconfig -o /boot/grub/grub.cfg`)
+
+Every step is conditional: already-correct settings print `SKIP`, and if
+nothing changed at all, the expensive rebuilds are skipped too.
+`mkinitcpio.conf` and `grub` are copied to `.bak` before modification, so
+`Emergency Rollback` below can restore them.
 
 Everything below runs in a TTY text console, which works fine even when the
 graphical driver is broken. Read this off your phone and type the commands —
