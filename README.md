@@ -209,6 +209,9 @@ run it from a GUI terminal instead; that SKIP is expected, not a problem.)
 - `gpu-verify.sh pre|post` — pre/post reboot checklists with PASS/FAIL per
   item (DKMS, blacklist, mkinitcpio, GRUB, binding, nvidia-smi,
   resolution). Exit code 0 means proceed.
+- `gpu-rollback.sh` — undoes the repair: restores `.bak` configs, drops
+  the blacklist, rebuilds initramfs + GRUB, optionally removes NVIDIA
+  packages (nouveau fallback). Prompts before changing anything.
 - `lib/diagnose.sh` — the driver-state classifier (`MATCH` / `HEALTHY` /
   `UNCLEAR` / built-unbound / no-entry) shared by `gpu-debug.sh`.
 - `tests/` — fixtures (`dkms status` + `lspci -k` samples) and `run.sh`,
@@ -240,6 +243,32 @@ bash ~/gpu-debug.sh           # compare the new log against the checklist:
                               # lists the GPU, native resolution, clean journal
 ```
 
-Fallback if the driver misbehaves: remove the `nvidia-580xx-*` packages,
-restore the mkinitcpio/GRUB backups, rebuild the initramfs, stay on
-nouveau.
+## Emergency Rollback
+
+If the repair made things worse, or you simply want nouveau back, undo it:
+
+```bash
+cd ~/gpu-nvidia-fix   # or gpu-nvidia-fix-main if you downloaded the zip
+bash gpu-rollback.sh
+```
+
+The script prompts before changing anything, then restores the `.bak`
+backups, removes the script-created nouveau blacklist, and rebuilds the
+initramfs + GRUB config. It then asks whether to also remove the NVIDIA
+packages for a full nouveau fallback. Reboot with `sudo reboot`, then run
+`bash gpu-debug.sh` (expect the nouveau/simpledrm state, not nvidia).
+
+Without the script, the same steps by hand:
+
+```bash
+sudo cp /etc/mkinitcpio.conf.bak /etc/mkinitcpio.conf
+sudo cp /etc/default/grub.bak /etc/default/grub
+sudo rm -f /etc/modprobe.d/blacklist-nouveau.conf
+sudo mkinitcpio -P
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+sudo pacman -R nvidia-580xx-dkms nvidia-580xx-utils   # nouveau fallback only
+sudo reboot
+```
+
+(If a `.bak` file is missing, stop — there is no known-good state to
+restore. The script checks this first and refuses to continue.)
