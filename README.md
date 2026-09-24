@@ -101,12 +101,11 @@ backs up `mkinitcpio.conf` and the GRUB config to `.bak` files first.
 ### 6. Pre-reboot checklist
 
 ```bash
-dkms status              # must say 'installed', NOT 'added'
-grep ^MODULES= /etc/mkinitcpio.conf
-cat /proc/cmdline        # look for nvidia_drm.modeset=1
+bash gpu-verify.sh pre
 ```
 
-All three good? Then:
+Want 5x PASS and `Safe to reboot`. Fix any FAIL line first (it tells you
+the exact command). Then:
 
 ```bash
 sudo reboot
@@ -117,14 +116,12 @@ sudo reboot
 Log in normally (GUI should be back at full resolution), open a terminal:
 
 ```bash
-nvidia-smi               # should list your GPU
-dkms status              # should still say 'installed'
-xrandr | head            # should show native resolution, not 640x480
+bash gpu-verify.sh post
 cd ~/gpu-nvidia-fix && bash gpu-debug.sh   # saves an "after" log to ~/logs
 ```
 
-(`xrandr` only works inside the GUI, not from a TTY — that error is
-expected, not a problem.)
+Want 6x PASS and `All green.` (The resolution check SKIPs in a TTY —
+run it from a GUI terminal instead; that SKIP is expected, not a problem.)
 
 
 
@@ -142,6 +139,9 @@ expected, not a problem.)
 - `gpu-update-nvidia.sh` — updates the held kernel/driver packages
   together (the `nvidia-580xx` split packages must upgrade as a set),
   then verifies DKMS status and config.
+- `gpu-verify.sh pre|post` — pre/post reboot checklists with PASS/FAIL per
+  item (DKMS, blacklist, mkinitcpio, GRUB, binding, nvidia-smi,
+  resolution). Exit code 0 means proceed.
 - `gpu-hold-reminder.hook` — pacman `PreTransaction` hook that warns when
   a transaction touches held packages (install to
   `/etc/pacman.d/hooks/`).
