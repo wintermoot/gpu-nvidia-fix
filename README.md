@@ -18,7 +18,7 @@ state due to nvidia driver load failure.
 
 Although I was still able to see the GUI login prompt and even log into i3WM.
 
-The kitty terminals and other apps launched wouldn't properly refresh.. so you were
+The kitty terminals and other apps launched wouldn't properly refresh.. so I was
 essentially blind.
 
 
