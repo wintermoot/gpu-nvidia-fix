@@ -28,7 +28,12 @@ if [ "$MODE" = pre ]; then
     "nouveau is blacklisted"
   check "grep '^GRUB_CMDLINE_LINUX_DEFAULT' /etc/default/grub | grep -q 'nvidia_drm.modeset=1'" \
     "GRUB carries nvidia_drm.modeset (takes effect after reboot)"
-  _IMG="$(ls -t /boot/initramfs-*.img 2>/dev/null | head -n 1)"
+  _IMG=""
+  for _f in /boot/initramfs-*.img; do
+    [ -e "$_f" ] || continue
+    [ -z "$_IMG" ] || [ "$_f" -nt "$_IMG" ] || continue
+    _IMG="$_f"
+  done
   check "[ -n '$_IMG' ] && [ '$_IMG' -nt /etc/mkinitcpio.conf ]" \
     "initramfs was rebuilt after the config change (else run: sudo mkinitcpio -P)"
 else

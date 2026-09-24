@@ -1,5 +1,7 @@
 # gpu-nvidia-fix
 
+[![shell](https://github.com/wintermoot/gpu-nvidia-fix/actions/workflows/shell.yml/badge.svg)](https://github.com/wintermoot/gpu-nvidia-fix/actions/workflows/shell.yml)
+
 Helper scripts for surviving NVIDIA DKMS breakage on Arch Linux when a
 kernel update removes APIs the proprietary module still uses, plus a hold
 pattern that keeps `linux` / `nvidia` packages from updating underneath a

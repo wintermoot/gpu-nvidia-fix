@@ -3,6 +3,7 @@
 # Usage: ./gpu-debug.sh  or  bash ~/gpu-debug.sh
 _SRC="${BASH_SOURCE[0]:-$0}"
 while [ -L "$_SRC" ]; do _L="$(readlink "$_SRC")"; case "$_L" in /*) _SRC="$_L";; *) _SRC="$(dirname "$_SRC")/$_L";; esac; done
+# shellcheck source=/dev/null # .env is optional local overrides, see .env.example
 [ -f "$(dirname "$_SRC")/.env" ] && . "$(dirname "$_SRC")/.env"
 LOG_DIR="${LOG_DIR:-$HOME/logs}"
 OUT="$LOG_DIR/gpu-debug-$(date +%Y%m%d-%H%M%S).log"
@@ -38,12 +39,14 @@ echo "=== JOURNAL ERRORS THIS BOOT ==="
 journalctl -b -p err --no-pager 2>&1 | tail -n 100
 echo
 echo "=== XORG ==="
+# shellcheck disable=SC2012 # human-readable listing is the point of a debug collector
 ls -lt ~/.local/share/xorg/ /var/log/Xorg* 2>&1 | head
 tail -n 150 ~/.local/share/xorg/Xorg.0.log 2>/dev/null || tail -n 150 /var/log/Xorg.0.log 2>&1
 echo
 echo "=== DISPLAY / COMPOSITOR ==="
 echo "XDG_SESSION_TYPE=$XDG_SESSION_TYPE DESKTOP=$XDG_CURRENT_DESKTOP DISPLAY=$DISPLAY WAYLAND=$WAYLAND_DISPLAY"
 xrandr 2>&1 | head -n 40
+# shellcheck disable=SC2009 # need the USER/TTY columns pgrep does not print
 ps aux 2>&1 | grep -iE 'Xorg|Xwayland|picom|kwin|mutter|gnome-shell|plasmashell' | grep -v grep
 echo
 echo "=== DMESG (needs sudo, will prompt) ==="
