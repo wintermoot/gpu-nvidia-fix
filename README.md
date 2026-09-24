@@ -70,20 +70,22 @@ rest of this guide says `gpu-nvidia-fix`.)
 
 `sudo` asks for *your* password here, and that works in a TTY.
 
-### 4. Confirm this is your problem
+### 4. Let the script confirm this is your problem
 
 ```bash
-dkms status
-lspci -k | grep -A3 -i vga
-pacman -Q linux linux-headers
-pacman -Qs nvidia
+bash gpu-debug.sh
 ```
 
-You are in the right place if DKMS says `added` instead of `installed`
-for the nvidia module and no `nvidia` driver is bound to the card.
-These scripts target `nvidia-580xx-dkms 580.173.02` on kernel 7.2.x —
-if your versions differ, the steps still apply, but read error output
-carefully instead of assuming the same failure.
+Wait for it to finish, then read the last lines (`VERDICT`). It saves the
+full log to `~/logs` either way.
+
+- `VERDICT: MATCH` — this is your issue, continue to step 5.
+- `VERDICT: HEALTHY` — your driver is built and bound; the fix below does
+  not apply. Look at the compositor, Xorg config, or cables instead.
+- Anything else — stop here and share the saved log when asking for help.
+
+These scripts target `nvidia-580xx-dkms 580.173.02` on kernel 7.2.x — with
+different versions, treat any non-MATCH verdict as "ask a human".
 
 ### 5. Apply the fix
 
@@ -130,7 +132,8 @@ expected, not a problem.)
 
 - `gpu-debug.sh` — collects kernel version, driver binding, DKMS status,
   modprobe.d, kernel cmdline, journal errors, Xorg log, and display state
-  into a timestamped log (`$LOG_DIR`, defaults to `~/logs`). No GUI
+  into a timestamped log (`$LOG_DIR`, defaults to `~/logs`), then prints a
+  plain-English `VERDICT` saying whether the fix applies to you. No GUI
   required; the `dmesg` section needs a terminal for `sudo`.
 - `gpu-fix-nvidia.sh` — repair: kernel-API compatibility patches to the
   DKMS sources, `dkms install`, nouveau blacklist, mkinitcpio `MODULES`,
