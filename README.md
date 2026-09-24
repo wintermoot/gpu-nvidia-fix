@@ -53,7 +53,7 @@ No reply? Run `nmtui`, select your network, activate it, then retry the ping.
 With git (preferred):
 
 ```bash
-sudo pacman -S --needed git
+sudo pacman -S git
 git clone https://github.com/wintermoot/gpu-nvidia-fix.git
 cd gpu-nvidia-fix
 ```
@@ -61,7 +61,7 @@ cd gpu-nvidia-fix
 No git and don't want it? Grab the same files as a download instead:
 
 ```bash
-sudo pacman -S --needed curl
+sudo pacman -S curl
 curl -L https://github.com/wintermoot/gpu-nvidia-fix/archive/refs/heads/main.tar.gz -o fix.tar.gz
 tar xzf fix.tar.gz
 cd gpu-nvidia-fix-main
