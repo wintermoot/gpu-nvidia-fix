@@ -75,8 +75,9 @@ load at boot:
 
 Every step is conditional: already-correct settings print `SKIP`, and if
 nothing changed at all, the expensive rebuilds are skipped too.
-`mkinitcpio.conf` and `grub` are copied to `.bak` before modification, so
-`Emergency Rollback` below can restore them.
+`mkinitcpio.conf` and `grub` are copied to `.bak` before modification —
+first run only, so re-running the repair can never overwrite the original
+rollback point. `Emergency Rollback` below restores from those backups.
 
 Everything below runs in a TTY text console, which works fine even when the
 graphical driver is broken. Read this off your phone and type the commands —

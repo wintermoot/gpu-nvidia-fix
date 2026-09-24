@@ -41,7 +41,8 @@ sudo dkms install -m nvidia -v 580.173.02 -k "$KVER"
 echo "=== Phase 2: boot/module configuration ==="
 echo "Phase 1 fixed the source code. This phase configures module loading"
 echo "and early KMS so the built driver actually loads at boot."
-echo "Each step is skipped when already correct; originals are backed up to .bak."
+echo "Each step is skipped when already correct; originals are backed up to"
+echo ".bak on the first run only - re-runs keep the original rollback point."
 echo "--- nouveau blacklist ---"
 if [ -f /etc/modprobe.d/blacklist-nouveau.conf ] \
   && grep -q '^blacklist nouveau' /etc/modprobe.d/blacklist-nouveau.conf \
@@ -53,7 +54,11 @@ else
   CHANGED=1
 fi
 echo "--- mkinitcpio MODULES (early KMS; existing entries preserved) ---"
-sudo cp /etc/mkinitcpio.conf /etc/mkinitcpio.conf.bak
+if [ ! -e /etc/mkinitcpio.conf.bak ]; then
+  sudo cp /etc/mkinitcpio.conf /etc/mkinitcpio.conf.bak
+else
+  echo "(keeping existing rollback backup /etc/mkinitcpio.conf.bak)"
+fi
 WANT_MODS=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
 if grep -q '^MODULES=' /etc/mkinitcpio.conf; then
   CURRENT="$(grep '^MODULES=' /etc/mkinitcpio.conf | sed 's/^MODULES=(//; s/)$//')"
@@ -75,7 +80,11 @@ else
 fi
 grep "^MODULES=" /etc/mkinitcpio.conf
 echo "--- GRUB kernel params (nvidia_drm modeset + fbdev) ---"
-sudo cp /etc/default/grub /etc/default/grub.bak
+if [ ! -e /etc/default/grub.bak ]; then
+  sudo cp /etc/default/grub /etc/default/grub.bak
+else
+  echo "(keeping existing rollback backup /etc/default/grub.bak)"
+fi
 grep -q '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub || { echo "ERROR: no GRUB_CMDLINE_LINUX_DEFAULT line in /etc/default/grub; add kernel params manually. GRUB left unchanged."; exit 1; }
 for gp in nvidia_drm.modeset=1 nvidia_drm.fbdev=1; do
   gkey="${gp%%=*}"
