@@ -1,0 +1,26 @@
+From: gpu-nvidia-fix <https://github.com/wintermoot/gpu-nvidia-fix>
+Subject: [PATCH 4/4] nvidia-uvm: replace removed strncpy() in chunk cache init
+
+Kernel 7.2 removed strncpy() from the kernel API. The destination holds
+a NUL-terminated cache name, so strscpy() with the full field size
+preserves the semantics (the old code copied size-1 bytes and relied on
+the field being zero-initialised for termination; strscpy() always
+NUL-terminates).
+
+Applies to nvidia-580.173.02.
+
+--- a/nvidia-uvm/uvm_pmm_gpu.c
++++ b/nvidia-uvm/uvm_pmm_gpu.c
+@@ -2798,11 +2798,11 @@ static NV_STATUS init_chunk_split_cache_level(uvm_pmm_gpu_t *pmm, size_t level)
+         if (!chunk_split_cache[level].cache) {
+             size_t size;
+             size_t align;
+             if (level == 0) {
+-                strncpy(chunk_split_cache[level].name, "uvm_gpu_chunk_t", sizeof(chunk_split_cache[level].name) - 1);
++                strscpy(chunk_split_cache[level].name, "uvm_gpu_chunk_t", sizeof(chunk_split_cache[level].name));
+                 size = sizeof(uvm_gpu_chunk_t);
+                 align = __alignof__(uvm_gpu_chunk_t);
+             } else {
+                 snprintf(chunk_split_cache[level].name,
+                          sizeof(chunk_split_cache[level].name),
+                          "uvm_gpu_chunk_%u", (unsigned)level);

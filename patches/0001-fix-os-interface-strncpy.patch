@@ -1,0 +1,21 @@
+From: gpu-nvidia-fix <https://github.com/wintermoot/gpu-nvidia-fix>
+Subject: [PATCH 1/4] nvidia: replace removed strncpy() in os_get_current_process_name
+
+Kernel 7.2 removed strncpy() from the kernel API. The destination here
+holds a NUL-terminated task name, so strscpy() with the full buffer
+length preserves the semantics (the old code copied len-1 bytes and
+forced the last byte to NUL; strscpy() always NUL-terminates).
+
+Applies to nvidia-580.173.02.
+
+--- a/nvidia/os-interface.c
++++ b/nvidia/os-interface.c
+@@ -730,6 +730,6 @@ void NV_API_CALL os_get_current_process_name(char *buf, NvU32 len)
+ {
+     task_lock(current);
+-    strncpy(buf, current->comm, len - 1);
+-    buf[len - 1] = '\0';
++    strscpy(buf, current->comm, len);
++
+     task_unlock(current);
+ }

@@ -3,24 +3,34 @@ set -e
 KVER=$(uname -r)
 echo "Kernel: $KVER"
 sudo -v
-echo "Patching nvidia source for kernel 7.2 (strncpy removed upstream)..."
-SRC=/usr/src/nvidia-580.173.02
-if grep -q "strncpy(buf, current->comm" $SRC/nvidia/os-interface.c; then
-  sudo sed -i 's/strncpy(buf, current->comm, len - 1);/strscpy(buf, current->comm, len);/' $SRC/nvidia/os-interface.c
-  sudo sed -i '/os_get_current_process_name/,/^}/ s/^    buf\[len - 1\].*$//' $SRC/nvidia/os-interface.c
-fi
-if grep -q "strncpy(regkey_val, regkey_val_start" $SRC/nvidia/linux_nvswitch.c; then
-  sudo sed -i 's/strncpy(regkey_val, regkey_val_start, regkey_val_len);/memcpy(regkey_val, regkey_val_start, regkey_val_len);/' $SRC/nvidia/linux_nvswitch.c
-fi
-if grep -q "return strncpy(dest, src, length);" $SRC/nvidia/linux_nvswitch.c; then
-  sudo sed -i 's/return strncpy(dest, src, length);/strscpy(dest, src, length);\n    return dest;/' $SRC/nvidia/linux_nvswitch.c
-fi
-if grep -q "return strncpy(dest, src, n);" $SRC/nvidia-modeset/nvidia-modeset-linux.c; then
-  sudo sed -i 's/return strncpy(dest, src, n);/strscpy(dest, src, n);\n    return dest;/' $SRC/nvidia-modeset/nvidia-modeset-linux.c
-fi
-if grep -q 'strncpy(chunk_split_cache\[level\].name' $SRC/nvidia-uvm/uvm_pmm_gpu.c; then
-  sudo sed -i 's/strncpy(chunk_split_cache\[level\].name, "uvm_gpu_chunk_t", sizeof(chunk_split_cache\[level\].name) - 1);/strscpy(chunk_split_cache[level].name, "uvm_gpu_chunk_t", sizeof(chunk_split_cache[level].name));/' $SRC/nvidia-uvm/uvm_pmm_gpu.c
-fi
+EXPECT_VER=580.173.02
+SRC=/usr/src/nvidia-$EXPECT_VER
+_FSRC="${BASH_SOURCE[0]:-$0}"
+while [ -L "$_FSRC" ]; do _L="$(readlink "$_FSRC")"; case "$_L" in /*) _FSRC="$_L";; *) _FSRC="$(dirname "$_FSRC")/$_L";; esac; done
+PATCHDIR="$(dirname "$_FSRC")/patches"
+
+echo "Expecting NVIDIA source $EXPECT_VER at $SRC"
+[ -d "$SRC" ] || { echo "ERROR: source tree $SRC not found. Is nvidia-580xx-dkms installed? No changes were made."; exit 1; }
+pacman -Q nvidia-580xx-dkms 2>/dev/null | grep -q "$EXPECT_VER" || { echo "ERROR: installed nvidia-580xx-dkms does not match $EXPECT_VER. Refusing to patch an unexpected version. No changes were made."; exit 1; }
+command -v git >/dev/null || { echo "ERROR: 'git' not found (install with: sudo pacman -S git). No changes were made."; exit 1; }
+[ -d "$PATCHDIR" ] || { echo "ERROR: patch dir $PATCHDIR missing. Clone/download the full project. No changes were made."; exit 1; }
+
+apply_patch() {
+  local p="$1"
+  if git -C "$SRC" apply --reverse --check -p1 < "$p" >/dev/null 2>&1; then
+    echo "SKIP (already applied): $(basename "$p")"
+  elif git -C "$SRC" apply --check -p1 < "$p" >/dev/null 2>&1; then
+    echo "APPLY: $(basename "$p")"
+    sudo git -C "$SRC" apply -p1 "$p" || { echo "ERROR: failed applying $(basename "$p"). No further changes."; exit 1; }
+  else
+    echo "ERROR: $(basename "$p") does not match the expected $EXPECT_VER source tree."
+    echo "Refusing to modify an unexpected source tree. No changes were made."
+    exit 1
+  fi
+}
+
+echo "Applying kernel-7.2 compatibility patches from $PATCHDIR..."
+for p in "$PATCHDIR"/000*.patch; do apply_patch "$p"; done
 grep -rn "strncpy" $SRC --include="*.c" | grep -v Binary || echo "no strncpy left"
 echo "Rebuilding nvidia DKMS..."
 sudo dkms install -m nvidia -v 580.173.02 -k "$KVER"

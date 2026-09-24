@@ -1,0 +1,44 @@
+From: gpu-nvidia-fix <https://github.com/wintermoot/gpu-nvidia-fix>
+Subject: [PATCH 2/4] nvidia: replace removed strncpy() in linux_nvswitch
+
+Kernel 7.2 removed strncpy() from the kernel API.
+
+- nvswitch_os_read_registry_dword: the source range holds no NUL, so this
+  is an exact-length byte copy; memcpy() is the correct replacement and
+  the explicit NUL termination on the next line is kept as-is.
+- nvswitch_os_strncpy: wrapper whose contract returns the destination
+  pointer. strscpy() returns a length instead, so the call is split and
+  dest is returned explicitly.
+
+Applies to nvidia-580.173.02.
+
+--- a/nvidia/linux_nvswitch.c
++++ b/nvidia/linux_nvswitch.c
+@@ -2034,11 +2034,11 @@ nvswitch_os_read_registry_dword
+     regkey_val_len = regkey_val_end - regkey_val_start;
+     if (regkey_val_len > NVSWITCH_REGKEY_VALUE_LEN || regkey_val_len == 0)
+     {
+         return -NVL_ERR_GENERIC;
+     }
+
+-    strncpy(regkey_val, regkey_val_start, regkey_val_len);
++    memcpy(regkey_val, regkey_val_start, regkey_val_len);
+     regkey_val[regkey_val_len] = '\0';
+
+     if (nvswitch_os_strtouint(regkey_val, data) != 0)
+     {
+@@ -2387,11 +2387,12 @@ nvswitch_os_strncpy
+ char*
+ nvswitch_os_strncpy
+ (
+     char *dest,
+     const char *src,
+     NvLength length
+ )
+ {
+-    return strncpy(dest, src, length);
++    strscpy(dest, src, length);
++    return dest;
+ }
+
+

@@ -1,0 +1,23 @@
+From: gpu-nvidia-fix <https://github.com/wintermoot/gpu-nvidia-fix>
+Subject: [PATCH 3/4] nvidia-modeset: replace removed strncpy() in nvkms_strncpy
+
+Kernel 7.2 removed strncpy() from the kernel API. nvkms_strncpy is a
+wrapper whose contract returns the destination pointer. strscpy()
+returns a length instead, so the call is split and dest is returned
+explicitly.
+
+Applies to nvidia-580.173.02.
+
+--- a/nvidia-modeset/nvidia-modeset-linux.c
++++ b/nvidia-modeset/nvidia-modeset-linux.c
+@@ -640,8 +640,9 @@ int nvkms_strcmp(const char *s1, const char *s2)
+ {
+     return strcmp(s1, s2);
+ }
+
+ char* nvkms_strncpy(char *dest, const char *src, size_t n)
+ {
+-    return strncpy(dest, src, n);
++    strscpy(dest, src, n);
++    return dest;
+ }

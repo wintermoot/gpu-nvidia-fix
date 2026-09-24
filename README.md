@@ -138,10 +138,13 @@ run it from a GUI terminal instead; that SKIP is expected, not a problem.)
   into a timestamped log (`$LOG_DIR`, defaults to `~/logs`), then prints a
   plain-English `VERDICT` saying whether the fix applies to you. No GUI
   required; the `dmesg` section needs a terminal for `sudo`.
-- `gpu-fix-nvidia.sh` — repair: kernel-API compatibility patches to the
-  DKMS sources, `dkms install`, nouveau blacklist, mkinitcpio `MODULES`,
-  GRUB `nvidia_drm` parameters, initramfs + GRUB rebuild. Idempotent,
-  re-run safe.
+- `gpu-fix-nvidia.sh` — repair: applies the version-checked patch files in
+  `patches/` to the DKMS sources (refuses unexpected source trees, skips
+  already-applied), then `dkms install`, nouveau blacklist, mkinitcpio
+  `MODULES`, GRUB `nvidia_drm` parameters, initramfs + GRUB rebuild.
+  Idempotent, re-run safe.
+- `patches/0001-0004` — the kernel-7.2 `strncpy` compatibility patches for
+  nvidia-580.173.02, applied with `git apply` (exact match, no fuzz).
 - `gpu-update-nvidia.sh` — updates the held kernel/driver packages
   together (the `nvidia-580xx` split packages must upgrade as a set),
   then verifies DKMS status and config.
