@@ -5,14 +5,44 @@ kernel update removes APIs the proprietary module still uses, plus a hold
 pattern that keeps `linux` / `nvidia` packages from updating underneath a
 working driver until an official fixed release lands.
 
-Developed against `linux 7.2.6` + `nvidia-580xx-dkms 580.173.02`
-(kernel 7.2 removed `strncpy()` from the kernel API; fixed upstream in
-driver series 580.178.04+). Reinstalling the DKMS package wipes
-`/usr/src` patches, which is expected once the official build lands.
+## Tested configuration
+
+| Component | Tested |
+|---|---|
+| Kernel | `7.2.6-arch2-1` (Arch Linux, x86_64) |
+| NVIDIA DKMS package | `nvidia-580xx-dkms 580.173.02-1` |
+| GPU | GeForce GTX 1080 (GP104, Pascal) |
+| Bootloader / initramfs | GRUB + mkinitcpio |
+| Display | Xorg + i3WM under GDM |
+
+Upstream fixed the underlying issue in driver series 580.178.04+.
+Reinstalling the DKMS package wipes `/usr/src` patches — expected once
+the official build lands. The repair script refuses to run against any
+other driver version instead of guessing (see guards in
+`gpu-fix-nvidia.sh`, rationale in `PATCH_NOTES.md`).
+
+### Expected but unverified
+
+- Same driver (580.173.02) on later 7.2.x kernels: the removed API stays
+  removed, so the patches should still apply and DKMS should rebuild.
+  The version guard pins the *driver*, not the kernel, so this path stays
+  open.
+- Other Pascal (GP10x) cards: same driver code paths, but not tested here.
+
+### Unsupported / unknown
+
+- Other driver series (470xx, 575xx, 590xx+, …): different sources — the
+  patches will not apply, and the script aborts rather than modifying an
+  unexpected tree.
+- Non-GRUB bootloaders (systemd-boot, Limine, …) and non-mkinitcpio
+  initramfs tools (dracut, …): the script only writes GRUB + mkinitcpio
+  configuration and only verifies those two.
+- Anything not x86_64, anything Wayland-first: not tested here. Run
+  `gpu-debug.sh` and compare against the checklist before trusting the
+  repair.
 
 
 ## Issue Description
-
 You run a pacman -Syu and reboot only to find yourself in a 640x480 fallback 
 state due to nvidia driver load failure.
 
