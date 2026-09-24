@@ -33,8 +33,10 @@ they are kept short on purpose.
 1. Press `Ctrl+Alt+F3`. The broken GUI disappears, a text login appears.
 2. Type your username, Enter, then your password, Enter. Nothing shows while
    typing the password — that is normal.
-3. Scrollback in a TTY is `Shift+PageUp`. Back to the GUI later with
-   `Ctrl+Alt+F1` (or F2 — whichever shows your login screen).
+
+<div align="center">
+<i>Tip: scrollback in a TTY is <code>Shift+PageUp</code>. Back to the GUI anytime with <code>Ctrl+Alt+F1</code> (or <code>F2</code>).</i>
+</div>
 
 ### 2. Check your network
 
@@ -90,6 +92,7 @@ different versions, treat any non-MATCH verdict as "ask a human".
 ### 5. Apply the fix
 
 ```bash
+cd ~/gpu-nvidia-fix   # or gpu-nvidia-fix-main for the download; skip if already there
 bash gpu-debug.sh       # saves a "before" log to ~/logs for comparison
 bash gpu-fix-nvidia.sh  # patches sources, rebuilds DKMS, sets blacklist,
                         # modules, and boot params (asks for sudo password)
@@ -101,6 +104,7 @@ backs up `mkinitcpio.conf` and the GRUB config to `.bak` files first.
 ### 6. Pre-reboot checklist
 
 ```bash
+cd ~/gpu-nvidia-fix   # skip if your prompt already shows it
 bash gpu-verify.sh pre
 ```
 
@@ -113,11 +117,13 @@ sudo reboot
 
 ### 7. Post-reboot verification
 
-Log in normally (GUI should be back at full resolution), open a terminal:
+Log in normally (GUI should be back at full resolution), open a terminal.
+You start in your home folder, so go back to the project first:
 
 ```bash
+cd ~/gpu-nvidia-fix   # or gpu-nvidia-fix-main if you downloaded the zip
 bash gpu-verify.sh post
-cd ~/gpu-nvidia-fix && bash gpu-debug.sh   # saves an "after" log to ~/logs
+bash gpu-debug.sh     # saves an "after" log to ~/logs
 ```
 
 Want 6x PASS and `All green.` (The resolution check SKIPs in a TTY —
