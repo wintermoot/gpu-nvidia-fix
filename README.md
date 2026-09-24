@@ -145,6 +145,7 @@ run it from a GUI terminal instead; that SKIP is expected, not a problem.)
   Idempotent, re-run safe.
 - `patches/0001-0004` — the kernel-7.2 `strncpy` compatibility patches for
   nvidia-580.173.02, applied with `git apply` (exact match, no fuzz).
+  `PATCH_NOTES.md` explains why each replacement preserves semantics.
 - `gpu-update-nvidia.sh` — updates the held kernel/driver packages
   together (the `nvidia-580xx` split packages must upgrade as a set),
   then verifies DKMS status and config.
