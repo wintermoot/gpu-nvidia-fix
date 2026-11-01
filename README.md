@@ -7,21 +7,42 @@ kernel update removes APIs the proprietary module still uses, plus a hold
 pattern that keeps `linux` / `nvidia` packages from updating underneath a
 working driver until an official fixed release lands.
 
+The original 580.173.02 / kernel-7.2 incident this repo was built for is
+**resolved**: upstream fixed the API breakage in 580.178.04+, and the
+reference host moved to 580.196.07 on 2026-11-01 (hold retired).
+
 ## Tested configuration
 
-| Component | Tested |
-|---|---|
-| Kernel | `7.2.6-arch2-1` (Arch Linux, x86_64) |
-| NVIDIA DKMS package | `nvidia-580xx-dkms 580.173.02-1` |
-| GPU | GeForce GTX 1080 (GP104, Pascal) |
-| Bootloader / initramfs | GRUB + mkinitcpio |
-| Display | Xorg + i3WM under GDM |
+| Component | Broken (patched, historical) | Resolved |
+|---|---|---|
+| Kernel | `7.2.6-arch2-1` (Arch Linux, x86_64) | `7.2.6-arch2-1` |
+| NVIDIA DKMS package | `nvidia-580xx-dkms 580.173.02-1` | `nvidia-580xx-dkms 580.196.07-1` |
+| 32-bit GL package | (not installed) | `lib32-nvidia-580xx-utils 580.196.07-1` |
+| GPU | GeForce GTX 1080 (GP104, Pascal) | GeForce GTX 1080 (GP104, Pascal) |
+| Bootloader / initramfs | GRUB + mkinitcpio | GRUB + mkinitcpio |
+| Display | Xorg + i3WM under GDM | Xorg + i3WM under GDM |
 
-Upstream fixed the underlying issue in driver series 580.178.04+.
+Upstream fixed the underlying issue in driver series 580.178.04+. On
+2026-11-01 the reference host upgraded the whole 580xx set to `580.196.07`
+(64-bit utils + DKMS + `lib32-nvidia-580xx-utils` together), rebuilt the
+initramfs so early KMS embeds the new module, and verified DKMS,
+`nvidia-smi`, the 32-bit GL libraries, and a 32-bit OpenGL game after
+reboot. The manual `strncpy` patches and the hold pattern below are
+therefore historical: they still apply to `580.173.02`, but are not needed
+on `580.178.04+`.
+
 Reinstalling the DKMS package wipes `/usr/src` patches — expected once
 the official build lands. The repair script refuses to run against any
 other driver version instead of guessing (see guards in
 `gpu-fix-nvidia.sh`, rationale in `PATCH_NOTES.md`).
+
+### 32-bit OpenGL note
+
+The 32-bit userspace libraries are a separate package. If a 32-bit OpenGL
+game exits immediately (e.g. Noita logs `Window creation failed: Invalid
+window`), install `lib32-nvidia-580xx-utils` at the **same version** as
+`nvidia-580xx-utils` / `nvidia-580xx-dkms`, then rebuild the initramfs and
+reboot so the 32-bit client matches the loaded kernel module.
 
 ### Expected but unverified
 
@@ -205,7 +226,8 @@ run it from a GUI terminal instead; that SKIP is expected, not a problem.)
   `PATCH_NOTES.md` explains why each replacement preserves semantics.
 - `gpu-update-nvidia.sh` — updates the held kernel/driver packages
   together (the `nvidia-580xx` split packages must upgrade as a set),
-  then verifies DKMS status and config.
+  then verifies DKMS status and config. Add `lib32-nvidia-580xx-utils` by
+  hand when 32-bit OpenGL apps are in use.
 - `gpu-verify.sh pre|post` — pre/post reboot checklists with PASS/FAIL per
   item (DKMS, blacklist, mkinitcpio, GRUB, binding, nvidia-smi,
   resolution). Exit code 0 means proceed.
@@ -220,13 +242,27 @@ run it from a GUI terminal instead; that SKIP is expected, not a problem.)
   a transaction touches held packages (install to
   `/etc/pacman.d/hooks/`).
 
-## The hold
+## The hold (retired 2026-11-01)
+
+The hold kept the broken 580.173.02 set in place until a fixed driver
+landed. It consisted of:
 
 1. `IgnorePkg = linux linux-headers nvidia-580xx-dkms nvidia-580xx-utils`
    in `pacman.conf`.
 2. The hook above as a reminder on every relevant transaction.
 3. A `yay` shell wrapper that auto-appends `--ignore` for the same set
    on `-Syu` and points at `gpu-update-nvidia.sh` instead.
+
+Once a fixed driver is installed and verified, retire it:
+
+```bash
+sudo rm /etc/pacman.d/hooks/gpu-hold-reminder.hook
+sudo sed -i '/^IgnorePkg = .*nvidia-580xx/d' /etc/pacman.conf
+# delete the GPU_HOLD / yay() wrapper block from ~/.bashrc, then open a new shell
+```
+
+Confirm with `grep '^IgnorePkg' /etc/pacman.conf` (no match desired) and
+`type yay` in a new shell (should resolve to `/usr/bin/yay`, not a function).
 
 ## Local config
 
@@ -242,6 +278,9 @@ bash ~/gpu-debug.sh           # compare the new log against the checklist:
                               # DKMS 'installed', nvidia bound, nvidia-smi
                               # lists the GPU, native resolution, clean journal
 ```
+
+Once those pass, retire the hold as shown in
+[The hold](#the-hold-retired-2026-11-01).
 
 ## Emergency Rollback
 

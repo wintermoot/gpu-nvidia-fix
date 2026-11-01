@@ -1,5 +1,9 @@
 # Patch notes: kernel-7.2 `strncpy()` replacements
 
+> Historical: upstream fixed this in 580.178.04+. These patches apply only
+> to 580.173.02 and are no longer needed on newer 580xx releases (the
+> reference host moved to 580.196.07 on 2026-11-01).
+
 Kernel 7.2 removed `strncpy()` from the kernel API, so nvidia-580.173.02
 no longer compiles. Each replacement below was chosen for the specific
 operation at that site — not as a blanket `strncpy` → `strscpy` swap.
